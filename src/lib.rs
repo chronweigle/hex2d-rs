@@ -65,7 +65,7 @@ extern crate num;
 extern crate rand;
 extern crate rustc_serialize;
 
-use num::{Float, One, Zero};
+use num::{Float, One, Zero,cast};
 use num::iter::range_inclusive;
 use std::ops::{Add, Sub, Neg};
 use std::cmp::{max, min};
@@ -79,7 +79,9 @@ use Spacing::*;
 /// Integer trait required by this library
 pub trait Integer : num::Signed +
                     num::Integer +
+                    num::NumCast +
                     num::CheckedAdd +
+                    rustc_serialize::Encodable +
                     num::ToPrimitive +
                     num::FromPrimitive +
                     One + Zero + Copy { }
@@ -88,7 +90,9 @@ impl<I> Integer for I
 where
 I : num::Signed +
     num::Integer +
+    num::NumCast +
     num::CheckedAdd +
+    rustc_serialize::Encodable + 
     num::ToPrimitive +
     num::FromPrimitive +
     One + Zero + Copy { }
@@ -97,7 +101,7 @@ I : num::Signed +
 mod test;
 
 /// Coordinate on 2d hexagonal grid
-#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd, RustcDecodable)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug, Ord, PartialOrd, RustcDecodable,RustcEncodable)]
 pub struct Coordinate<I : Integer = i32> {
     /// `x` coordinate
     pub x : I,
@@ -335,6 +339,34 @@ impl<I : Integer> Coordinate<I> {
         let coord = Coordinate{ x: q, y: -q - r };
         (coord, (qo, ro))
     }
+
+//    pub fn nearest_with_offset2(spacing : IntegerSpacing<I>, v : (I, I)) -> (Coordinate<I>, (I, I)) {
+//       let (asc_x, asc_y) = v;
+//
+//	      let ((q, qo),(r, ro)) = match spacing {
+//            IntegerSpacing::FlatTop(w, h) => {
+//            	let effectiveX: f32 = cast(asc_x) / cast(w);
+//            	let effectiveY: f32 = cast(asc_y) / cast(h);
+//	        	let q = (effectiveX * 3f32.sqrt()/3 - effectiveY / 3) ;
+//			    let r = effectiveY * 2f32/3f32;
+//			    (
+//		  		     
+//            	
+//                (asc_x.div_floor(&w), asc_x.mod_floor(&w)),
+//                (
+//                    (asc_y - h * asc_x.div_floor(&w) / two).div_floor(&h),
+//                    (asc_y + h / two * asc_x.div_floor(&w)).mod_floor(&h)
+//                )
+//                )},
+//            IntegerSpacing::PointyTop(w, h) => (
+//                (
+//                    (asc_x - w * asc_y.div_floor(&h) / two).div_floor(&w),
+//                    (asc_x + w / two * asc_y.div_floor(&h)).mod_floor(&w)
+//                ),
+//                (asc_y.div_floor(&h),  asc_y.mod_floor(&h))
+//                ),
+//        };
+//    }
 
     /// Old name for `to_pixel`
     pub fn to_pixel_float(&self, spacing : Spacing) -> (f32, f32) {
